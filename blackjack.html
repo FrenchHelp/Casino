@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack - Online Casino</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1e1e1e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00c8ff;
+        }
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 18px;
+        }
+        .money-counter {
+            font-size: 18px;
+            color: #00c8ff;
+            padding: 0 25px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        main {
+            margin-top: 70px;
+            padding: 20px;
+            text-align: center;
+        }
+        .game-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
+        }
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .card-box {
+            background-color: #444;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 20px;
+            min-width: 40px;
+            text-align: center;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #00c8ff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:disabled {
+            background-color: #555;
+        }
+        .result {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            z-index: 999;
+        }
+
+        .notification .message {
+            background-color: #28a745; /* Default green for win */
+            padding: 30px 60px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .notification.loss .message {
+            background-color: #dc3545; /* Red for loss */
+        }
+
+        .notification.bust .message {
+            background-color: #ffc107; /* Yellow for bust */
+        }
+
+        .notification.tie .message {
+            background-color: #17a2b8; /* Blue for tie */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Casino</div>
+        <nav>
+            <a href="home.html">🏠 Home</a>
+            <a href="shop.html">🛍️ Shop</a>
+            <a href="games.html">🎮 Games</a> <!-- Updated link -->
+            <a href="#rewards">🎁 Rewards</a>
+        </nav>
+        <div class="money-counter" id="money-counter">
+            💰 $5000
+        </div>
+    </header>
+
+    <main>
+        <section id="blackjack-game" class="game-container">
+            <h2>Blackjack Game</h2>
+            <p>It costs $100 to play. Win to earn more money or lose and your bet is gone.</p>
+            
+            <div class="player-cards" id="player-cards">
+                <p>Your Cards:</p>
+                <div class="cards-container" id="player-cards-container"></div>
+            </div>
+            <div class="dealer-cards" id="dealer-cards">
+                <p>Dealer's Cards:</p>
+                <div class="cards-container" id="dealer-cards-container"></div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn" id="hit-button">Hit Me</button>
+                <button class="btn" id="stand-button">Stand</button>
+                <button class="btn" id="play-again-button" style="display: none;">Play Again</button>
+            </div>
+
+            <div class="result" id="result"></div>
+        </section>
+    </main>
+
+    <!-- Centered Notification -->
+    <div id="notification" class="notification">
+        <div class="message" id="notification-message">
+            You won $0
+        </div>
+    </div>
+
+    <script>
+        // Initialize coins if not set
+        if (!localStorage.getItem('coins')) {
+            localStorage.setItem('coins', 5000);
+        }
+
+        function updateCoinCounter() {
+            const coinCounter = document.getElementById('money-counter');
+            const coins = localStorage.getItem('coins');
+            coinCounter.textContent = `💰 $${coins}`;
+        }
+
+        updateCoinCounter();
+
+        // Game setup
+        const cardValues = {
+            '♦️1': 1, '♦️2': 2, '♦️3': 3, '♦️4': 4, '♦️5': 5, '♦️6': 6,
+            '♦️7': 7, '♦️8': 8, '♦️9': 9, '♦️10': 10, '♦️J': 10, '♦️Q': 10,
+            '♦️K': 10
+        };
+
+        let playerHand = [];
+        let dealerHand = [];
+        let playerScore = 0;
+        let dealerScore = 0;
+        let playerTurn = true;
+        let gameInProgress = false;
+        const betAmount = 100;
+
+        const hitButton = document.getElementById('hit-button');
+        const standButton = document.getElementById('stand-button');
+        const resultDiv = document.getElementById('result');
+        const playAgainButton = document.getElementById('play-again-button');
+        const notificationDiv = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+
+        function getRandomCard() {
+            const cards = Object.keys(cardValues);
+            return cards[Math.floor(Math.random() * cards.length)];
+        }
+
+        function updateCardsDisplay() {
+            const playerCardsDiv = document.getElementById('player-cards-container');
+            const dealerCardsDiv = document.getElementById('dealer-cards-container');
+            
+            // Clear current cards
+            playerCardsDiv.innerHTML = '';
+            dealerCardsDiv.innerHTML = '';
+
+            // Display player cards
+            playerHand.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card-box');
+                cardElement.textContent = card;
+                playerCardsDiv.appendChild(cardElement);
+            });
+
+            // Display dealer cards
+            dealerHand.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card-box');
+                cardElement.textContent = card;
+                dealerCardsDiv.appendChild(cardElement);
+            });
+        }
+
+        function calculateScore(hand) {
+            let score = 0;
+            let aceCount = 0;
+            hand.forEach(card => {
+                score += cardValues[card];
+                if (card.includes('1')) aceCount++;
+            });
+
+            // Adjust for Aces (1 or 11)
+            while (score <= 11 && aceCount > 0) {
+                score += 10;
+                aceCount--;
+            }
+
+            return score;
+        }
+
+        function startGame() {
+            if (localStorage.getItem('coins') < betAmount) {
+                resultDiv.textContent = 'Not enough coins to play!';
+                return;
+            }
+
+            // Deduct bet amount
+            let coins = parseInt(localStorage.getItem('coins'));
+            coins -= betAmount;
+            localStorage.setItem('coins', coins);
+            updateCoinCounter();
+
+            // Reset game variables
+            playerHand = [];
+            dealerHand = [];
+            playerScore = 0;
+            dealerScore = 0;
+            playerTurn = true;
+            gameInProgress = true;
+
+            // Deal initial cards
+            playerHand.push(getRandomCard(), getRandomCard());
+            dealerHand.push(getRandomCard(), getRandomCard());
+
+            // Update the UI
+            updateCardsDisplay();
+            resultDiv.textContent = 'Game started, hit or stand!';
+            hitButton.disabled = false;
+            standButton.disabled = false;
+            playAgainButton.style.display = 'none';  // Hide play again button initially
+        }
+
+        function showNotification(message, type, amount) {
+            notificationMessage.textContent = message.replace('$x', amount);
+            notificationDiv.classList.remove('loss', 'bust', 'tie');
+            notificationDiv.classList.add(type);
+            notificationDiv.style.display = 'flex'; // Show the notification in the center
+
+            setTimeout(() => {
+                notificationDiv.style.display = 'none'; // Hide after 3 seconds
+            }, 3000);
+        }
+
+        function endGame(winner) {
+            gameInProgress = false;
+            hitButton.disabled = true;
+            standButton.disabled = true;
+            playAgainButton.style.display = 'inline-block';  // Show play again button
+
+            let coins = parseInt(localStorage.getItem('coins'));
+            let message = '';
+            let type = '';
+            let amount = betAmount;
+
+            if (winner === 'player') {
+                coins += betAmount;
+                message = `You won $${amount}!`;
+                type = 'notification';
+            } else if (winner === 'dealer') {
+                message = `You lose $${amount}!`;
+                type = 'loss';
+            } else if (winner === 'bust') {
+                message = `You busted! Lost $${amount}`;
+                type = 'bust';
+            } else {
+                message = 'It\'s a tie!';
+                type = 'tie';
+            }
+
+            localStorage.setItem('coins', coins);
+            updateCoinCounter();
+
+            // Show notification with the result
+            showNotification(message, type, amount);
+        }
+
+        hitButton.addEventListener('click', () => {
+            if (!gameInProgress || !playerTurn) return;
+
+            playerHand.push(getRandomCard());
+            playerScore = calculateScore(playerHand);
+
+            updateCardsDisplay();
+
+            if (playerScore > 21) {
+                endGame('bust');
+            }
+        });
+
+        standButton.addEventListener('click', () => {
+            if (!gameInProgress || !playerTurn) return;
+
+            playerTurn = false;
+
+            // Dealer's turn
+            while (dealerScore < 17) {
+                dealerHand.push(getRandomCard());
+                dealerScore = calculateScore(dealerHand);
+                updateCardsDisplay();
+            }
+
+            if (dealerScore > 21 || playerScore > dealerScore) {
+                endGame('player');
+            } else if (playerScore < dealerScore) {
+                endGame('dealer');
+            } else {
+                endGame('tie');
+            }
+        });
+
+        playAgainButton.addEventListener('click', () => {
+            startGame(); // Restart the game
+            resultDiv.textContent = '';
+        });
+
+        // Initialize the game
+        startGame();
+    </script>
+</body>
+</html>
