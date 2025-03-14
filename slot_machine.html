@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Machine - Online Casino</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1e1e1e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00c8ff;
+        }
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 18px;
+        }
+        .money-counter {
+            font-size: 18px;
+            color: #00c8ff;
+            padding: 0 25px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        main {
+            margin-top: 70px;
+            padding: 20px;
+            text-align: center;
+        }
+        .slot-machine {
+            display: flex;
+            justify-content: space-evenly;
+            margin-bottom: 20px;
+        }
+        .slot {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 32px;
+            color: #fff;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #00c8ff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .result {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            z-index: 999;
+        }
+
+        .notification .message {
+            background-color: #28a745; /* Default green for win */
+            padding: 30px 60px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .notification.loss .message {
+            background-color: #dc3545; /* Red for loss */
+        }
+
+        .notification.bust .message {
+            background-color: #ffc107; /* Yellow for bust */
+        }
+
+        .notification.tie .message {
+            background-color: #17a2b8; /* Blue for tie */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Casino</div>
+        <nav>
+            <a href="home.html">🏠 Home</a>
+            <a href="shop.html">🛍️ Shop</a>
+            <a href="games.html">🎮 Games</a> <!-- Updated link -->
+            <a href="rewards.html">🎁 Rewards</a>
+        </nav>
+        <div class="money-counter" id="money-counter">
+            💰 $5000
+        </div>
+    </header>
+
+    <main>
+        <section id="slot-machine-game">
+            <h2>Slot Machine</h2>
+            <p>It costs $100 to play. The more symbols you match, the more you win!</p>
+
+            <div class="slot-machine" id="slot-machine">
+                <div class="slot" id="slot1">🍒</div>
+                <div class="slot" id="slot2">🍒</div>
+                <div class="slot" id="slot3">🍒</div>
+                <div class="slot" id="slot4">🍒</div>
+                <div class="slot" id="slot5">🍒</div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn" id="spin-button">Spin</button>
+            </div>
+
+            <div class="result" id="result"></div>
+        </section>
+    </main>
+
+    <!-- Centered Notification -->
+    <div id="notification" class="notification">
+        <div class="message" id="notification-message">
+            You won $0
+        </div>
+    </div>
+
+    <script>
+        // Initialize coins if not set
+        if (!localStorage.getItem('coins')) {
+            localStorage.setItem('coins', 5000);
+        }
+
+        function updateCoinCounter() {
+            const coinCounter = document.getElementById('money-counter');
+            const coins = localStorage.getItem('coins');
+            coinCounter.textContent = `💰 $${coins}`;
+        }
+
+        updateCoinCounter();
+
+        // Symbols for the slots
+        const symbols = ['🍒', '🍉', '🍋', '🍇', '🍊', '🍍', '🍓'];
+
+        // Slot elements
+        const slots = document.querySelectorAll('.slot');
+        const spinButton = document.getElementById('spin-button');
+        const resultDiv = document.getElementById('result');
+        const notificationDiv = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        const betAmount = 100;
+
+        function showNotification(message, type, amount) {
+            notificationMessage.textContent = message.replace('$x', amount);
+            notificationDiv.classList.remove('loss', 'bust', 'tie');
+            notificationDiv.classList.add(type);
+            notificationDiv.style.display = 'flex'; // Show the notification in the center
+
+            setTimeout(() => {
+                notificationDiv.style.display = 'none'; // Hide after 3 seconds
+            }, 3000);
+        }
+
+        function spinSlots() {
+            if (localStorage.getItem('coins') < betAmount) {
+                resultDiv.textContent = 'Not enough coins to play!';
+                return;
+            }
+
+            // Deduct bet amount
+            let coins = parseInt(localStorage.getItem('coins'));
+            coins -= betAmount;
+            localStorage.setItem('coins', coins);
+            updateCoinCounter();
+
+            // Disable spin button during spin
+            spinButton.disabled = true;
+
+            // Rapidly change symbols for each slot
+            let spins = 0;
+            const maxSpins = 20;
+
+            function spin() {
+                spins++;
+                if (spins > maxSpins) {
+                    clearInterval(spinner);
+                    setTimeout(showResults, 500);
+                }
+
+                slots.forEach(slot => {
+                    const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                    slot.textContent = randomSymbol;
+                });
+            }
+
+            const spinner = setInterval(spin, 100);
+
+            // Show results after spinning
+            function showResults() {
+                // Check the result
+                const results = [...slots].map(slot => slot.textContent);
+                const uniqueResults = new Set(results);
+                const matchCount = results.filter(symbol => symbol === results[0]).length;
+
+                let winnings = 0;
+                let message = '';
+                let type = 'notification';
+
+                // Check for matching slots
+                const matchingSymbols = results.filter(symbol => symbol === results[0]);
+                if (matchingSymbols.length === 5) {
+                    winnings = betAmount * 500; // 5 matching symbols
+                    message = `Jackpot! You won $${winnings}!`;
+                } else if (matchingSymbols.length === 4) {
+                    winnings = betAmount * 100; // 4 matching symbols
+                    message = `You won $${winnings}!`;
+                } else if (matchingSymbols.length === 3) {
+                    winnings = betAmount * 50; // 3 matching symbols
+                    message = `You won $${winnings}!`;
+                } else if (matchingSymbols.length === 2) {
+                    winnings = betAmount * 10; // 2 matching symbols
+                    message = `You won $${winnings}!`;
+                } else {
+                    message = 'No matching symbols, you lose!';
+                    type = 'loss';
+                }
+
+                // If 2 symbols match, the player wins a smaller amount
+                if (matchingSymbols.length === 2) {
+                    winnings += betAmount * 5; // Add a small reward for 2 matching symbols
+                    message = `You won $${winnings} for matching 2 symbols!`;
+                }
+
+                coins += winnings;
+                localStorage.setItem('coins', coins);
+                updateCoinCounter();
+                resultDiv.textContent = message;
+
+                // Show notification with the result
+                showNotification(message, type, winnings);
+                spinButton.disabled = false;
+            }
+        }
+
+        spinButton.addEventListener('click', spinSlots);
+    </script>
+</body>
+</html>

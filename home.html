@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Casino - Home</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1e1e1e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00c8ff;
+        }
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 18px;
+        }
+        .money-counter {
+            font-size: 18px;
+            color: #00c8ff;
+            padding: 0 25px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        main {
+            margin-top: 70px;
+            padding: 20px;
+            text-align: center;
+        }
+        .section-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #00c8ff;
+        }
+        .featured-games {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            justify-items: center;
+        }
+        .game-card {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            width: 150px;
+            text-align: center;
+        }
+        .game-card p {
+            margin-top: 10px;
+            color: #ccc;
+            font-size: 16px;
+        }
+        .game-card i {
+            font-size: 40px;
+            font-style: normal;
+        }
+        .game-card a {
+            text-decoration: none;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Casino</div>
+        <nav>
+            <a href="home.html">🏠 Home</a>
+            <a href="shop.html">🛍️ Shop</a>
+            <a href="games.html">🎮 Games</a>
+            <a href="rewards.html">🎁 Rewards</a>
+        </nav>
+        <div class="money-counter" id="money-counter">
+            💰 $5000
+        </div>
+    </header>
+
+    <main>
+        <section id="home">
+            <h2 class="section-title">Welcome to the Online Casino</h2>
+            <p>Experience the best games, rewards, and shop for amazing mystery boxes!</p>
+        </section>
+
+        <section id="featured-games">
+            <h2 class="section-title">Featured Games</h2>
+            <div class="featured-games">
+                <div class="game-card">
+                    <a href="slot_machine.html">
+                        <i>🎰</i>
+                        <p>Slot Machine</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="poker.html">
+                        <i>🃏</i>
+                        <p>Poker</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="craps.html">
+                        <i>🎲</i>
+                        <p>Craps</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="blackjack.html">
+                        <i>🃏</i>
+                        <p>Blackjack</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="roulette.html">
+                        <i>🎯</i>
+                        <p>Roulette</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="texas_holdem.html">
+                        <i>♠️</i>
+                        <p>Texas Hold'em</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="baccarat.html">
+                        <i>🎯</i>
+                        <p>Baccarat</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="spin_the_wheel.html">
+                        <i>🃏</i>
+                        <p>Spin the Wheel</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        if (!localStorage.getItem('coins')) {
+            localStorage.setItem('coins', 5000);
+        }
+
+        function updateCoinCounter() {
+            const coinCounter = document.getElementById('money-counter');
+            const coins = localStorage.getItem('coins');
+            coinCounter.textContent = `💰 $${coins}`;
+        }
+
+        updateCoinCounter();
+    </script>
+</body>
+</html>

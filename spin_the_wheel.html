@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin the Wheel - Online Casino</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1e1e1e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00c8ff;
+        }
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 18px;
+        }
+        .money-counter {
+            font-size: 18px;
+            color: #00c8ff;
+            padding: 0 25px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        main {
+            margin-top: 70px;
+            padding: 20px;
+            text-align: center;
+        }
+        .section-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #00c8ff;
+        }
+        .wheel-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            position: relative;
+        }
+        .wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 10px solid #00c8ff;
+            position: relative;
+            margin-bottom: 20px;
+            background: conic-gradient(
+                red 0deg 30deg,
+                black 30deg 60deg,
+                red 60deg 90deg,
+                black 90deg 120deg,
+                red 120deg 150deg,
+                black 150deg 180deg,
+                red 180deg 210deg,
+                black 210deg 240deg,
+                red 240deg 270deg,
+                black 270deg 300deg,
+                red 300deg 330deg,
+                black 330deg 360deg
+            );
+        }
+        .arrow {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 20px solid #fff;
+        }
+        .spin-button {
+            background-color: #00c8ff;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .spin-button:hover {
+            background-color: #0091b3;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            z-index: 999;
+        }
+
+        .notification .message {
+            background-color: #28a745; /* Default green for win */
+            padding: 30px 60px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .notification.loss .message {
+            background-color: #dc3545; /* Red for loss */
+        }
+
+        .notification.bust .message {
+            background-color: #ffc107; /* Yellow for bust */
+        }
+
+        .notification.tie .message {
+            background-color: #17a2b8; /* Blue for tie */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Casino</div>
+        <nav>
+            <a href="home.html">🏠 Home</a>
+            <a href="shop.html">🛍️ Shop</a>
+            <a href="games.html">🎮 Games</a>
+            <a href="rewards.html">🎁 Rewards</a>
+        </nav>
+        <div class="money-counter" id="money-counter">
+            💰 $5000
+        </div>
+    </header>
+
+    <main>
+        <section id="spin-the-wheel">
+            <h2 class="section-title">Spin the Wheel</h2>
+            <div class="wheel-container">
+                <div class="wheel" id="wheel"></div>
+                <div class="arrow" id="arrow"></div>
+                <button class="spin-button" id="spin-button">Spin</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Centered Notification -->
+    <div id="notification" class="notification">
+        <div class="message" id="notification-message">
+            You won $0
+        </div>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('coins')) {
+            localStorage.setItem('coins', 5000);
+        }
+
+        function updateCoinCounter() {
+            const coinCounter = document.getElementById('money-counter');
+            const coins = localStorage.getItem('coins');
+            coinCounter.textContent = `💰 $${coins}`;
+        }
+
+        updateCoinCounter();
+
+        const spinButton = document.getElementById('spin-button');
+        const arrow = document.getElementById('arrow');
+        const wheel = document.getElementById('wheel');
+        const notificationDiv = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        const betAmount = 100;
+
+        function showNotification(message, type, amount) {
+            notificationMessage.textContent = message.replace('$x', amount);
+            notificationDiv.classList.remove('loss', 'bust', 'tie');
+            notificationDiv.classList.add(type);
+            notificationDiv.style.display = 'flex';
+
+            setTimeout(() => {
+                notificationDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        spinButton.addEventListener('click', () => {
+            if (parseInt(localStorage.getItem('coins')) < betAmount) {
+                showNotification('Not enough coins to spin!', 'loss', 0);
+                return;
+            }
+
+            // Deduct coins for the spin
+            let coins = parseInt(localStorage.getItem('coins'));
+            coins -= betAmount;
+            localStorage.setItem('coins', coins);
+            updateCoinCounter();
+
+            // Disable spin button while spinning
+            spinButton.disabled = true;
+
+            const spinDegrees = Math.floor(Math.random() * 360) + 720; // Spins 2+ full rotations
+            wheel.style.transition = 'transform 3s ease-out';
+            wheel.style.transform = `rotate(${spinDegrees}deg)`;
+
+            setTimeout(() => {
+                const landingSegment = Math.floor(((spinDegrees % 360) / 30));
+                const prizes = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200];
+                const prizeAmount = prizes[landingSegment];
+                coins += prizeAmount;
+                localStorage.setItem('coins', coins);
+                updateCoinCounter();
+                showNotification(`You won $${prizeAmount}!`, 'notification', prizeAmount);
+                spinButton.disabled = false;
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
